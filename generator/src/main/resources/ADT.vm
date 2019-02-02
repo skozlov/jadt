@@ -1,0 +1,84 @@
+#if($packageName)package $packageName;#end
+
+
+import com.github.skozlov.jadt.commons.ADTUtilsInternal;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import static com.github.skozlov.jadt.commons.Consumers.nop;
+import static com.github.skozlov.jadt.commons.FunctionUtils.toFunction;
+
+/**
+ * Marks {@link T} as an algebraic data type of $subtypeNumber subtypes.
+ * @param <T> base type
+#foreach($i in [1..$subtypeNumber])
+ * @param <Sub$i> subtype
+#end
+ */
+public interface $className<
+	T extends $className<T#foreach($i in [1..$subtypeNumber]), Sub$i#end>,#foreach($i in [1..$subtypeNumber])
+
+	Sub$i extends T#if($foreach.hasNext),#end#end
+
+> {
+
+#foreach($i in [1..$subtypeNumber])
+	Class<Sub$i> getSubtype$i();
+
+#end
+
+	/**
+	 * Applies a function to {@code this} depending on its type.
+#foreach($i in [1..$subtypeNumber])
+	 * @param sub$i function to apply if {@code this} is an instance of {@link Sub$i}
+#end
+	 * @param <R> result type
+	 * @return value returned from the applied function
+	 */
+	default <R> R map(
+	#foreach($i in [1..$subtypeNumber])
+	Function<? super Sub$i, ? extends R> sub$i#if($foreach.hasNext),#end
+
+	#end
+){
+		//noinspection unchecked
+		return ADTUtilsInternal.map(
+		this,
+		#foreach($i in [1..$subtypeNumber])
+	new SimpleEntry<>(getSubtype$i(), (Function<$className<T#foreach($j in [1..$subtypeNumber]), Sub$j#end>, R>) sub$i)#if($foreach.hasNext),#end
+
+		#end
+);
+	}
+
+	/**
+	 * Applies an operation to {@code this} depending on its type.
+#foreach($i in [1..$subtypeNumber])
+	 * @param sub$i operation to apply if {@code this} is an instance of {@link Sub$i}
+#end
+	 */
+	default void forEach(
+	#foreach($i in [1..$subtypeNumber])
+	Consumer<Sub$i> sub$i#if($foreach.hasNext),#end
+
+	#end
+){
+		map(
+		#foreach($i in [1..$subtypeNumber])
+	toFunction(sub$i)#if($foreach.hasNext),#end
+
+		#end
+);
+	}
+
+#foreach($i in [1..$subtypeNumber])
+
+	/**
+	 * Applies the operation to {@code this} if it is an instance of {@link Sub$i}.
+	 * @param consumer operation to apply
+	 */
+	default void ifSubtype$i(Consumer<Sub$i> consumer){
+		forEach(#foreach($j in [1..$subtypeNumber])#if($j == $i)consumer#end#if($j != $i)nop()#end#if($foreach.hasNext), #end#end);
+	}
+#end
+}
