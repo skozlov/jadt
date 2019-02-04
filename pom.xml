@@ -16,6 +16,7 @@
 		<module>commons</module>
 		<module>generator</module>
 		<module>jadt</module>
+		<module>demo</module>
 	</modules>
 
 	<build>
